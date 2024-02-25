@@ -1,0 +1,13 @@
+.modBar
+{
+    -fx-background-color: #9a9ef8;
+}
+.modItem
+{
+    -fx-color: #ffffff;
+}
+
+.menu .label
+{
+    -fx-text-fill: #ffffff;
+}
