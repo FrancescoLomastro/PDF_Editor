@@ -53,8 +53,8 @@ public class PDFModel {
         clearDocument();
     }
 
-    public float getAspectRatio(float scrollbar_size) {
-        return documentHeight / (documentWidth );
+    public float getAspectRatio() {
+        return documentHeight / documentWidth ;
     }
 
     public void addBlankPage(int index) {

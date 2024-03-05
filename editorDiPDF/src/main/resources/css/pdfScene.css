@@ -51,3 +51,12 @@
 {
     -fx-background-color: #0d0e18;
 }
+
+#buttonBack:hover {
+    -fx-background-color: #15181e !important;
+    -fx-cursor: hand;
+}
+#buttonNext:hover {
+    -fx-background-color: #15181e !important;
+    -fx-cursor: hand;
+}

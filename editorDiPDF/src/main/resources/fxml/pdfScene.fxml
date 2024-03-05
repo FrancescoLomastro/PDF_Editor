@@ -7,6 +7,7 @@
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
@@ -54,25 +55,27 @@
                   </HBox>
                </top>
                <bottom>
-                  <HBox fx:id="navigationBar" alignment="CENTER" maxHeight="-Infinity" maxWidth="1.7976931348623157E308" prefHeight="28.0" prefWidth="600.0" style="-fx-background-color: #0d0e18;" BorderPane.alignment="CENTER">
+                  <HBox fx:id="navigationBar" alignment="CENTER" maxHeight="-Infinity" maxWidth="1.7976931348623157E308" prefHeight="41.0" prefWidth="600.0" spacing="5.0" style="-fx-background-color: #0d0e18;" BorderPane.alignment="CENTER">
                      <children>
-                         <Label fx:id="pageNumberTextField" text="0" textFill="WHITE">
-                             <font>
-                                 <Font size="14.0" />
-                             </font>
-                         </Label>
+                        <Button fx:id="buttonBack" alignment="CENTER" maxHeight="-Infinity" minHeight="-Infinity" mnemonicParsing="false" prefHeight="24.0" prefWidth="47.0" style="-fx-background-color: #424450;" text="Back" textFill="WHITE" />
+                         <TextField fx:id="pageNumberTextField" alignment="CENTER_RIGHT" maxHeight="-Infinity" minHeight="-Infinity" prefColumnCount="5" prefHeight="20.0" prefWidth="48.0" style="-fx-background-color: #424450; -fx-text-fill: white;" text="0">
+                           <font>
+                              <Font size="14.0" />
+                           </font>
+                         </TextField>
                          <Label fx:id="pageMaxNumberLabel" text="/000" textFill="WHITE">
                            <font>
                               <Font size="14.0" />
                            </font>
                         </Label>
+                        <Button fx:id="buttonNext" alignment="CENTER" maxHeight="-Infinity" minHeight="-Infinity" mnemonicParsing="false" prefHeight="24.0" prefWidth="47.0" style="-fx-background-color: #424450;" text="Next" textFill="WHITE" />
                      </children>
                   </HBox>
                </bottom>
                <center>
                   <ScrollPane fx:id="scrollPane" fitToHeight="true" fitToWidth="true" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="339.0" prefWidth="413.0" style="-fx-background: transparent; -fx-background-color: transparent;" BorderPane.alignment="CENTER">
                      <content>
-                        <VBox fx:id="vBox" alignment="TOP_CENTER" prefHeight="200.0" prefWidth="100.0" spacing="30.0" />
+                        <VBox fx:id="vBox" alignment="TOP_CENTER" prefHeight="200.0" prefWidth="100.0" />
                      </content>
                   </ScrollPane>
                </center>

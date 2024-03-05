@@ -1,17 +1,14 @@
 package org.example;
 
 import javafx.application.Platform;
-import javafx.beans.value.ChangeListener;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Cursor;
-import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
-import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
@@ -28,13 +25,12 @@ import java.util.ResourceBundle;
 public class PDFSceneController implements Initializable {
     private static final float SCROLLBAR_SIZE = 15;
     private static final Paint OVERLAY_COLOR = Color.BLACK;
-    private int totalPages = 0;
 
     @FXML
-    ScrollPane scrollPane;
+    private ScrollPane scrollPane;
 
     @FXML
-    VBox vBox;
+    private VBox vBox;
 
     @FXML
     private StackPane errorPopUp;
@@ -47,53 +43,113 @@ public class PDFSceneController implements Initializable {
     @FXML
     private Label savedLabel;
     @FXML
-    private Label pageNumberTextField;
+    private TextField pageNumberTextField;
     @FXML
     private Label pageMaxNumberLabel;
+    @FXML
+    private Button buttonNext;
+    @FXML
+    private Button buttonBack;
+    private double width;
+    private Pane globalPane;
+    private boolean scrollEventEnabled = true;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         saveMenuItem.setDisable(true);
         setupPopUpButton();
         displayPDF();
-        scrollPane.vvalueProperty().addListener((obs, oldVal, newVal) -> updatePageNumber());
-        navigationBarSetup();
+        setupControls();
+        updateTotalPageNumber();
         PDFView.getInstance().setupCloseAction();
     }
 
+    private void setupControls() {
+        scrollPane.vvalueProperty().addListener((observable, oldValue, newValue) -> {
+            if(scrollEventEnabled) {
+                int numPages = PDFModel.getInstance().getNumberOfPages();
+                int currentPage = (int) (newValue.doubleValue() * numPages) + 1;
+                if(currentPage <= numPages)
+                    pageNumberTextField.setText(Integer.toString(currentPage));
+            }
+        });
+        pageNumberTextField.setOnAction(event -> {
+            scrollEventEnabled = false;
 
-    private void navigationBarSetup() {
-        int actualIndex;
-        if(PDFModel.getInstance().getNumberOfPages() == 0) {
-            actualIndex = 0;
-        }
-        else {
-            actualIndex = 1;
-        }
-        pageNumberTextField.setText(String.valueOf(actualIndex));
-        pageMaxNumberLabel.setText("/" + PDFModel.getInstance().getNumberOfPages());
+            String text = pageNumberTextField.getText();
+            try {
+                int page = Integer.parseInt(text);
+                if(page < 1 || page > PDFModel.getInstance().getNumberOfPages()) {
+                    pageNumberTextField.setText("1");
+                    moveToPage(0);
+                }
+                else {
+                    moveToPage(page);
+                }
+            } catch (NumberFormatException e) {
+                pageNumberTextField.setText("1");
+                moveToPage(0);
+            }
+
+            scrollEventEnabled = true;
+        });
+        pageNumberTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+            buttonBack.setDisable(newValue.equals(String.valueOf(1)));
+            buttonNext.setDisable(newValue.equals(String.valueOf(PDFModel.getInstance().getNumberOfPages())));
+        });
+        buttonNext.setOnAction(event -> {
+            scrollEventEnabled = false;
+
+            String text = pageNumberTextField.getText();
+            try {
+                int page = Integer.parseInt(text);
+                if(page < PDFModel.getInstance().getNumberOfPages()) {
+                    page++;
+                    pageNumberTextField.setText(Integer.toString(page));
+                    moveToPage(page);
+                }
+            } catch (NumberFormatException e) {
+                pageNumberTextField.setText("1");
+                moveToPage(0);
+            }
+
+            scrollEventEnabled = true;
+        });
+        buttonBack.setOnAction(event -> {
+            scrollEventEnabled = false;
+
+            String text = pageNumberTextField.getText();
+            try {
+                int page = Integer.parseInt(text);
+                if(page > 1) {
+                    page--;
+                    pageNumberTextField.setText(Integer.toString(page));
+                    moveToPage(page);
+                }
+            } catch (NumberFormatException e) {
+                pageNumberTextField.setText("1");
+                moveToPage(0);
+            }
+
+            scrollEventEnabled = true;
+        });
+
+        pageNumberTextField.setText("1");
     }
 
-    private void updatePageNumber() {
-        double scrollPosition = scrollPane.getVvalue();
-        double contentHeight = scrollPane.getContent().getBoundsInLocal().getHeight();
-        double viewportHeight = scrollPane.getViewportBounds().getHeight();
-        int pageNumber = (int) Math.ceil(scrollPosition * (contentHeight / viewportHeight));
-        if(pageNumber> PDFModel.getInstance().getNumberOfPages())
-            pageNumber = PDFModel.getInstance().getNumberOfPages();
-        else if (pageNumber < 1)
-            pageNumber = 1;
-        pageNumberTextField.setText(String.valueOf(pageNumber));
-    }
 
-    private void updateTotalPages() {
-        totalPages = PDFModel.getInstance().getNumberOfPages();
-        pageMaxNumberLabel.setText("/" + totalPages);
-    }
 
+    private void moveToPage(int page) {
+        int normalizedPage = page - 1;
+        double pageHeight = ((Pane) vBox.getChildren().getFirst()).getHeight();
+        double visibleZoneHeight = scrollPane.getViewportBounds().getHeight();
+        double x = pageHeight/(vBox.getHeight()-visibleZoneHeight);
+        scrollPane.setVvalue(normalizedPage*(x));
+    }
 
     public void displayPDF() {
         int numPages = PDFModel.getInstance().getNumberOfPages();
+        width = scrollPane.getPrefWidth()-SCROLLBAR_SIZE;
         for (int i = 0; i < numPages; i++) {
             try {
                 setPage(i);
@@ -106,15 +162,14 @@ public class PDFSceneController implements Initializable {
             PDFView.getInstance().show();
         });
     }
-
     private void setPage(int i) throws IOException {
 
-        float ratio = PDFModel.getInstance().getAspectRatio(SCROLLBAR_SIZE);
+        float ratio = PDFModel.getInstance().getAspectRatio();
         byte[] imageData = PDFModel.getInstance().getPageAsImage(i, 72);
         Image image = new Image(new ByteArrayInputStream(imageData));
         ImageView imageView = new ImageView(image);
         Pane pane = new Pane();
-        double width = scrollPane.getPrefWidth()-SCROLLBAR_SIZE;
+
 
         pane.setMaxWidth(width);
         pane.setPrefWidth(width);
@@ -146,20 +201,8 @@ public class PDFSceneController implements Initializable {
         });
         vBox.getChildren().add(pane);
     }
-
-
-
-    private void handleRightClick(Pane pane) {
-        setUnsaved();
-        int index = vBox.getChildren().indexOf(pane);
-        PDFModel.getInstance().removePage(index);
-        vBox.getChildren().remove(pane);
-        updateTotalPages();
-    }
-
     public void setEndPage() {
-        float ratio = PDFModel.getInstance().getAspectRatio(SCROLLBAR_SIZE);
-        double width = scrollPane.getPrefWidth()-SCROLLBAR_SIZE;
+        float ratio = PDFModel.getInstance().getAspectRatio();
         AnchorPane endPage;
         try {
             endPage = FXMLLoader.load(getClass().getResource("/fxml/endPage.fxml"));
@@ -167,6 +210,8 @@ public class PDFSceneController implements Initializable {
             e.printStackTrace();
             return;
         }
+
+        globalPane = endPage;
 
         endPage.setMaxWidth(width);
         endPage.setPrefWidth(width);
@@ -193,6 +238,12 @@ public class PDFSceneController implements Initializable {
         });
         vBox.getChildren().add(endPage);
     }
+    public void updateTotalPageNumber() {
+        int numPages = PDFModel.getInstance().getNumberOfPages();
+        pageMaxNumberLabel.setText("/"+numPages);
+    }
+
+
 
     private void setupPopUpButton() {
         popUpButton.setOnAction(event -> {
@@ -200,11 +251,6 @@ public class PDFSceneController implements Initializable {
             errorLabel.setText("");
         });
     }
-    private void handleError(String errorMsg) {
-        errorLabel.setText(errorMsg);
-        errorPopUp.setVisible(true);
-    }
-
     private void setUnsaved() {
         saveMenuItem.setDisable(false);
         savedLabel.setText("Unsaved");
@@ -220,7 +266,7 @@ public class PDFSceneController implements Initializable {
     public void handleLeftClick(Pane pane, int lastPage) {
         setUnsaved();
         Pane whitePane = new Pane();
-        float ratio = PDFModel.getInstance().getAspectRatio(SCROLLBAR_SIZE);
+        float ratio = PDFModel.getInstance().getAspectRatio();
         whitePane.setPrefWidth(scrollPane.getPrefWidth());
         whitePane.setMinHeight(scrollPane.getPrefWidth()*ratio);
         whitePane.setMaxHeight(scrollPane.getPrefWidth()*ratio);
@@ -249,13 +295,22 @@ public class PDFSceneController implements Initializable {
 
         int index = vBox.getChildren().indexOf(pane);
         vBox.getChildren().add(index, whitePane);
-        if (lastPage == 0) {
+        if (lastPage == 0)
             PDFModel.getInstance().addBlankPage(index);
-        }
-        else {
+        else
             PDFModel.getInstance().addBlankPage(-1);
-        }
-        updateTotalPages();
+        updateTotalPageNumber();
+    }
+    private void handleRightClick(Pane pane) {
+        setUnsaved();
+        int index = vBox.getChildren().indexOf(pane);
+        PDFModel.getInstance().removePage(index);
+        vBox.getChildren().remove(pane);
+        updateTotalPageNumber();
+    }
+    private void handleError(String errorMsg) {
+        errorLabel.setText(errorMsg);
+        errorPopUp.setVisible(true);
     }
 
 
