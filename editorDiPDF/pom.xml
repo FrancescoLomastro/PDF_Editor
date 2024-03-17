@@ -70,7 +70,7 @@
                                     <mainClass>org.example.GUIStarter</mainClass>
                                 </transformer>
                             </transformers>
-                            <finalName>editorApp</finalName>
+                            <finalName>JavaPDFEdit</finalName>
                         </configuration>
                     </execution>
                 </executions>
